@@ -1,5 +1,4 @@
 // src/utils/translator.js
-// Simple wrapper that calls your backend API
 export const translateText = async (text, sourceLang = "en", targetLang) => {
   if (!text) return text;
 
@@ -8,13 +7,13 @@ export const translateText = async (text, sourceLang = "en", targetLang) => {
   if (cached) return cached;
 
   try {
-    const res = await fetch("http://localhost:5000/api/translate", {
+    const res = await fetch("/api/translate", {  // ← FIXED: relative path
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text, sourceLang, targetLang }),
     });
 
-    if (!res.ok) throw new Error("API error");
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
 
     const data = await res.json();
     const translated = data.translatedText || text;
