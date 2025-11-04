@@ -17,6 +17,25 @@ const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 // In-memory fallback translations (en, hi, ta, etc.)
 const translations = {};
 
+// Load all *.json at build time
+try {
+  const context = require.context('../translations', false, /\.json$/);
+  context.keys().forEach((key) => {
+    const lang = key.replace('./', '').replace('.json', '');
+    translations[lang] = context(key);
+  });
+} catch {
+  const modules = import.meta.glob('../translations/*.json', { eager: true });
+  Object.entries(modules).forEach(([path, mod]) => {
+    const lang = path.match(/([^/]+)\.json$/)?.[1];
+    if (lang) translations[lang] = mod.default || mod;
+  });
+}
+
+// Sync t() — no async
+export const t = (key, lang = "en") => {
+  return translations[lang]?.[key] || translations["en"]?.[key] || key;
+};
 // Load JSON files at build time (Vite/React Scripts supports this)
 const loadTranslations = () => {
   const context = require.context('../translations', false, /\.json$/);
