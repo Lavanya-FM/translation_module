@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { t } from "./utils/translator";
+import React, { useState, useEffect } from "react";
+import { translateText } from "./utils/translator";
 
 // ==================== STATIC ENGLISH TEXTS ====================
 const enTexts = {
@@ -37,9 +37,59 @@ const languages = [
 // ==================== MAIN APP ====================
 const App = () => {
   const [lang, setLang] = useState("en");
+  const [t, setT] = useState(enTexts);
+  const [loading, setLoading] = useState(true);
 
-  // Sync t() — no async, no loading
-  const translate = (key) => t(key, lang);
+  // Pre-load every string once per language
+  useEffect(() => {
+    const cacheKey = "translationCache";
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      setT(JSON.parse(cached)[lang] || enTexts);
+      setLoading(false);
+      return;
+    }
+
+    const buildCache = async () => {
+      const cache = { en: enTexts };
+
+      await Promise.all(
+        languages
+          .filter((l) => l.code !== "en")
+          .map(async ({ code }) => {
+            const translated = {};
+            for (const key in enTexts) {
+              translated[key] = await translateText(enTexts[key], "en", code);
+            }
+            cache[code] = translated;
+          })
+      );
+
+      localStorage.setItem(cacheKey, JSON.stringify(cache));
+      setT(cache[lang] || enTexts);
+      setLoading(false);
+    };
+
+    buildCache();
+  }, [lang]);
+
+  // Switch language instantly (already cached)
+  const changeLang = (newLang) => {
+    setLang(newLang);
+    const cache = JSON.parse(localStorage.getItem("translationCache") || "{}");
+    setT(cache[newLang] || enTexts);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-xl text-gray-600">Loading translations…</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-purple-50 font-sans text-gray-800">
@@ -49,18 +99,18 @@ const App = () => {
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center space-x-4">
               <div className="w-12 h-12 bg-gradient-to-br from-yellow-300 to-orange-400 rounded-full flex items-center justify-center shadow-lg animate-pulse">
-                <span className="text-2xl">Shopping Cart</span>
+                <span className="text-2xl">🛍️</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-white drop-shadow-md">My Store</h1>
             </div>
 
             <div className="flex items-center space-x-4">
               <button className="bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 px-6 py-3 rounded-full font-bold text-sm sm:text-base hover:from-yellow-500 hover:to-orange-500 transition shadow-lg hover:shadow-xl transform hover:scale-105">
-                Shopping Cart {translate("cart")}
+                🛒 {t.cart}
               </button>
               <select
                 value={lang}
-                onChange={(e) => setLang(e.target.value)}
+                onChange={(e) => changeLang(e.target.value)}
                 className="bg-white border-2 border-yellow-300 text-gray-800 px-4 py-2 rounded-full font-medium text-sm focus:outline-none focus:ring-4 focus:ring-yellow-300 shadow-md cursor-pointer"
               >
                 {languages.map((l) => (
@@ -80,13 +130,13 @@ const App = () => {
         <div className="absolute inset-0 bg-black opacity-20"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl sm:text-6xl lg:text-7xl font-black text-white drop-shadow-2xl leading-tight">
-            {translate("welcome")}
+            {t.welcome}
           </h2>
           <p className="mt-6 text-lg sm:text-2xl lg:text-3xl text-white font-medium drop-shadow-lg max-w-3xl mx-auto">
-            {translate("description")}
+            {t.description}
           </p>
           <button className="mt-10 bg-gradient-to-r from-yellow-400 to-red-500 text-white px-10 py-4 rounded-full font-bold text-lg hover:from-yellow-500 hover:to-red-600 transition shadow-xl hover:shadow-2xl transform hover:scale-110 border-4 border-white">
-            Shopping Cart {translate("cart")}
+            🛒 {t.cart}
           </button>
         </div>
       </section>
@@ -96,16 +146,16 @@ const App = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h3 className="text-4xl sm:text-5xl font-black bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 bg-clip-text text-transparent">
-              {translate("featuredProducts")}
+              {t.featuredProducts}
             </h3>
             <div className="w-24 h-1 bg-gradient-to-r from-orange-500 to-purple-600 mx-auto mt-4 rounded-full"></div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
-              { name: translate("product1"), price: "$99.99", emoji: "Headphones", color: "blue", tag: "HOT Fire" },
-              { name: translate("product2"), price: "$149.99", emoji: "Watch", color: "purple", tag: "NEW Sparkle" },
-              { name: translate("product3"), price: "$79.99", emoji: "Speaker", color: "pink", tag: "SALE Money" },
+              { name: t.product1, price: "$99.99", emoji: "🎧", color: "blue", tag: "HOT 🔥" },
+              { name: t.product2, price: "$149.99", emoji: "⌚", color: "purple", tag: "NEW ✨" },
+              { name: t.product3, price: "$79.99", emoji: "🔊", color: "pink", tag: "SALE 💰" },
             ].map((p, i) => (
               <div
                 key={i}
@@ -120,10 +170,10 @@ const App = () => {
                 <div className="p-6 text-center">
                   <h4 className="text-xl font-bold text-gray-800">{p.name}</h4>
                   <p className={`text-2xl font-black mt-2 text-${p.color}-600`}>
-                    {translate("price")}: {p.price}
+                    {t.price}: {p.price}
                   </p>
                   <button className={`w-full mt-4 bg-gradient-to-r from-${p.color}-500 to-${p.color}-600 text-white py-3 rounded-full font-bold hover:from-${p.color}-600 hover:to-${p.color}-700 transition shadow-md hover:shadow-lg transform hover:scale-105`}>
-                    {translate("addToCart")}
+                    {t.addToCart}
                   </button>
                 </div>
               </div>
@@ -137,16 +187,16 @@ const App = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h3 className="text-4xl sm:text-5xl font-black bg-gradient-to-r from-orange-500 to-pink-600 bg-clip-text text-transparent">
-              {translate("whyChooseUs")}
+              {t.whyChooseUs}
             </h3>
             <div className="w-24 h-1 bg-gradient-to-r from-orange-500 to-pink-600 mx-auto mt-4 rounded-full"></div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { icon: "Truck", title: translate("freeShipping"), desc: translate("freeShippingDesc") },
-              { icon: "Lock", title: translate("securePayment"), desc: translate("securePaymentDesc") },
-              { icon: "Chat Bubble", title: translate("support"), desc: translate("supportDesc") },
+              { icon: "🚚", title: t.freeShipping, desc: t.freeShippingDesc },
+              { icon: "🔒", title: t.securePayment, desc: t.securePaymentDesc },
+              { icon: "💬", title: t.support, desc: t.supportDesc },
             ].map((item, i) => (
               <div
                 key={i}
@@ -166,11 +216,11 @@ const App = () => {
       {/* Newsletter */}
       <section className="py-16 bg-gradient-to-r from-blue-600 to-purple-600">
         <div className="max-w-3xl mx-auto px-4 text-center">
-          <h3 className="text-3xl sm:text-4xl font-bold text-white mb-6">Envelope {translate("newsletter")}</h3>
+          <h3 className="text-3xl sm:text-4xl font-bold text-white mb-6">📧 {t.newsletter}</h3>
           <form className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
             <input
               type="email"
-              placeholder={translate("emailPlaceholder")}
+              placeholder={t.emailPlaceholder}
               required
               className="flex-1 px-6 py-4 rounded-full text-gray-800 focus:outline-none focus:ring-4 focus:ring-white shadow-lg"
             />
@@ -178,7 +228,7 @@ const App = () => {
               type="submit"
               className="bg-white text-purple-600 px-8 py-4 rounded-full font-bold hover:bg-gray-100 transition shadow-lg hover:shadow-xl transform hover:scale-105"
             >
-              {translate("subscribe")}
+              {t.subscribe}
             </button>
           </form>
         </div>
@@ -187,9 +237,9 @@ const App = () => {
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-10">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <p className="text-sm sm:text-base">{translate("footer")}</p>
+          <p className="text-sm sm:text-base">{t.footer}</p>
           <div className="flex justify-center space-x-6 mt-6">
-            {["Mobile", "Briefcase", "Bird", "Camera"].map((icon, i) => (
+            {["📱", "💼", "🐦", "📷"].map((icon, i) => (
               <span key={i} className="text-2xl hover:scale-125 transition cursor-pointer">
                 {icon}
               </span>
