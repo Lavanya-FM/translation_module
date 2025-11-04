@@ -143,6 +143,18 @@ app.get('/api/languages', (req, res) => {
   res.json({ languages });
 });
 
+if (process.env.NODE_ENV === 'production') {
+  const clientBuild = path.join(__dirname, '../multilingual-site/build');
+  app.use(express.static(clientBuild));
+
+  // Catch-all: send index.html for any non-/api route
+  app.get('*', (req, res) => {
+    if (!req.path.startsWith('/api')) {
+      res.sendFile(path.join(clientBuild, 'index.html'));
+    }
+  });
+}
+
 // Start server
 app.listen(PORT, () => {
   console.log(`Translation API running on http://localhost:${PORT}`);

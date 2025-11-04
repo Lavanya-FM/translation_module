@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { translateText } from "./utils/translator";
+import { t } from "./utils/translator";
 
 // ==================== STATIC ENGLISH TEXTS ====================
 const enTexts = {
@@ -40,44 +40,40 @@ const App = () => {
   const [t, setT] = useState(enTexts);
   const [loading, setLoading] = useState(true);
 
-  // Pre-load every string once per language
+  // Pre-load all keys for current language
   useEffect(() => {
-    const cacheKey = "translationCache";
-    const cached = localStorage.getItem(cacheKey);
-    if (cached) {
-      setT(JSON.parse(cached)[lang] || enTexts);
-      setLoading(false);
-      return;
-    }
+    const preloadLanguage = async () => {
+      setLoading(true);
+      const cacheKey = "fullTranslationCache";
+      const fullCache = JSON.parse(localStorage.getItem(cacheKey) || "{}");
 
-    const buildCache = async () => {
-      const cache = { en: enTexts };
+      if (fullCache[lang]) {
+        setT(fullCache[lang]);
+        setLoading(false);
+        return;
+      }
 
-      await Promise.all(
-        languages
-          .filter((l) => l.code !== "en")
-          .map(async ({ code }) => {
-            const translated = {};
-            for (const key in enTexts) {
-              translated[key] = await translateText(enTexts[key], "en", code);
-            }
-            cache[code] = translated;
-          })
-      );
+      const translated = {};
+      for (const key in enTexts) {
+        translated[key] = await t(key, lang); // Uses translator.js
+      }
 
-      localStorage.setItem(cacheKey, JSON.stringify(cache));
-      setT(cache[lang] || enTexts);
+      fullCache[lang] = translated;
+      localStorage.setItem(cacheKey, JSON.stringify(fullCache));
+      setT(translated);
       setLoading(false);
     };
 
-    buildCache();
+    preloadLanguage();
   }, [lang]);
 
-  // Switch language instantly (already cached)
+  // Instant language switch
   const changeLang = (newLang) => {
     setLang(newLang);
-    const cache = JSON.parse(localStorage.getItem("translationCache") || "{}");
-    setT(cache[newLang] || enTexts);
+    const fullCache = JSON.parse(localStorage.getItem("fullTranslationCache") || "{}");
+    if (fullCache[newLang]) {
+      setT(fullCache[newLang]);
+    }
   };
 
   if (loading) {
@@ -99,14 +95,14 @@ const App = () => {
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center space-x-4">
               <div className="w-12 h-12 bg-gradient-to-br from-yellow-300 to-orange-400 rounded-full flex items-center justify-center shadow-lg animate-pulse">
-                <span className="text-2xl">🛍️</span>
+                <span className="text-2xl">Shopping Cart</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-white drop-shadow-md">My Store</h1>
             </div>
 
             <div className="flex items-center space-x-4">
               <button className="bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 px-6 py-3 rounded-full font-bold text-sm sm:text-base hover:from-yellow-500 hover:to-orange-500 transition shadow-lg hover:shadow-xl transform hover:scale-105">
-                🛒 {t.cart}
+                Shopping Cart {t.cart}
               </button>
               <select
                 value={lang}
@@ -136,7 +132,7 @@ const App = () => {
             {t.description}
           </p>
           <button className="mt-10 bg-gradient-to-r from-yellow-400 to-red-500 text-white px-10 py-4 rounded-full font-bold text-lg hover:from-yellow-500 hover:to-red-600 transition shadow-xl hover:shadow-2xl transform hover:scale-110 border-4 border-white">
-            🛒 {t.cart}
+            Shopping Cart {t.cart}
           </button>
         </div>
       </section>
@@ -153,9 +149,9 @@ const App = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
-              { name: t.product1, price: "$99.99", emoji: "🎧", color: "blue", tag: "HOT 🔥" },
-              { name: t.product2, price: "$149.99", emoji: "⌚", color: "purple", tag: "NEW ✨" },
-              { name: t.product3, price: "$79.99", emoji: "🔊", color: "pink", tag: "SALE 💰" },
+              { name: t.product1, price: "$99.99", emoji: "Headphones", color: "blue", tag: "HOT Fire" },
+              { name: t.product2, price: "$149.99", emoji: "Watch", color: "purple", tag: "NEW Sparkle" },
+              { name: t.product3, price: "$79.99", emoji: "Speaker", color: "pink", tag: "SALE Money" },
             ].map((p, i) => (
               <div
                 key={i}
@@ -194,9 +190,9 @@ const App = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { icon: "🚚", title: t.freeShipping, desc: t.freeShippingDesc },
-              { icon: "🔒", title: t.securePayment, desc: t.securePaymentDesc },
-              { icon: "💬", title: t.support, desc: t.supportDesc },
+              { icon: "Truck", title: t.freeShipping, desc: t.freeShippingDesc },
+              { icon: "Lock", title: t.securePayment, desc: t.securePaymentDesc },
+              { icon: "Chat Bubble", title: t.support, desc: t.supportDesc },
             ].map((item, i) => (
               <div
                 key={i}
@@ -216,7 +212,7 @@ const App = () => {
       {/* Newsletter */}
       <section className="py-16 bg-gradient-to-r from-blue-600 to-purple-600">
         <div className="max-w-3xl mx-auto px-4 text-center">
-          <h3 className="text-3xl sm:text-4xl font-bold text-white mb-6">📧 {t.newsletter}</h3>
+          <h3 className="text-3xl sm:text-4xl font-bold text-white mb-6">Envelope {t.newsletter}</h3>
           <form className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
             <input
               type="email"
@@ -239,7 +235,7 @@ const App = () => {
         <div className="max-w-7xl mx-auto px-4 text-center">
           <p className="text-sm sm:text-base">{t.footer}</p>
           <div className="flex justify-center space-x-6 mt-6">
-            {["📱", "💼", "🐦", "📷"].map((icon, i) => (
+            {["Mobile", "Briefcase", "Bird", "Camera"].map((icon, i) => (
               <span key={i} className="text-2xl hover:scale-125 transition cursor-pointer">
                 {icon}
               </span>
