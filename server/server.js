@@ -143,13 +143,39 @@ app.get('/api/languages', (req, res) => {
   res.json({ languages });
 });
 
+// === PRODUCTION: Serve frontend build ===
 if (process.env.NODE_ENV === 'production') {
   const clientBuild = path.join(__dirname, '../multilingual-site/build');
+
+  // Check if build folder exists
+  if (!fs.existsSync(clientBuild)) {
+    console.error('Build folder not found:', clientBuild);
+    console.error('Did you forget to run "npm run build" in the frontend?');
+    console.error('Current directory:', __dirname);
+    console.error('Contents of parent:', fs.readdirSync(path.dirname(clientBuild)));
+    process.exit(1); // Fail fast on Render
+  }
+
+  if (!fs.existsSync(path.join(clientBuild, 'index.html'))) {
+    console.error('index.html not found in build folder!');
+    process.exit(1);
+  }
+
+  console.log('Serving static files from:', clientBuild);
+
   app.use(express.static(clientBuild));
+
+  // SPA fallback — with error handling
   app.get('*', (req, res) => {
-    if (!req.path.startsWith('/api')) {
-      res.sendFile(path.join(clientBuild, 'index.html'));
-    }
+    if (req.path.startsWith('/api')) return; // Let API routes handle
+
+    const indexPath = path.join(clientBuild, 'index.html');
+    res.sendFile(indexPath, (err) => {
+      if (err) {
+        console.error('Error serving index.html:', err);
+        res.status(500).send('Server Error: Frontend not built');
+      }
+    });
   });
 }
 
