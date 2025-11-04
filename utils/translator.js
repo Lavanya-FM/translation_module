@@ -15,26 +15,28 @@ import axios from "axios";
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 // In-memory fallback translations (en, hi, ta, etc.)
+// Load all *.json at build time
 const translations = {};
 
-// Load all *.json at build time
+// CRA: require.context (works with react-scripts)
 try {
   const context = require.context('../translations', false, /\.json$/);
-  context.keys().forEach((key) => {
-    const lang = key.replace('./', '').replace('.json', '');
-    translations[lang] = context(key);
+  context.keys().forEach((file) => {
+    const lang = file.replace('./', '').replace('.json', '');
+    translations[lang] = context(file);
   });
-} catch {
+} catch (e) {
+  // Vite / modern bundlers: import.meta.glob
   const modules = import.meta.glob('../translations/*.json', { eager: true });
-  Object.entries(modules).forEach(([path, mod]) => {
-    const lang = path.match(/([^/]+)\.json$/)?.[1];
-    if (lang) translations[lang] = mod.default || mod;
-  });
+  for (const [path, mod] of Object.entries(modules)) {
+    const lang = path.split('/').pop().replace('.json', '');
+    translations[lang] = mod.default || mod;
+  }
 }
 
-// Sync t() — no async
-export const t = (key, lang = "en") => {
-  return translations[lang]?.[key] || translations["en"]?.[key] || key;
+// Sync t() – no async, no loading spinner
+export const t = (key, lang = 'en') => {
+  return translations[lang]?.[key] ?? translations.en?.[key] ?? key;
 };
 // Load JSON files at build time (Vite/React Scripts supports this)
 const loadTranslations = () => {
@@ -52,11 +54,7 @@ loadTranslations();
 
 /**
  * t("welcome") → gets from JSON or translates
- */
-export const t = async (key, targetLang = "en") => {
-  const cacheKey = `t:${targetLang}:${key}`;
-  const cached = sessionStorage.getItem(cacheKey);
-  if (cached) return cached;
+
 
   // 1. Try static JSON
   const staticText = translations[targetLang]?.[key] || translations["en"]?.[key];
