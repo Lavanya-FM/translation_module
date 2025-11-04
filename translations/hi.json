@@ -1,11 +1,11 @@
 {
-  "select_language": "अपनी भाषा चुनें",
-  "signin_title": "अपने अकाउंट में साइन इन करें",
-  "wishlist": "अपनी विश-लिस्ट देखें",
-  "previous_orders": "पिछली खरीदारी ढूंढें और पुनः ऑर्डर करें",
-  "track_order": "अपनी खरीदारी को ट्रैक करें",
-  "signin_button": "पहले से ग्राहक? साइन इन",
-  "create_account": "नए हैं? अकाउंट बनायें",
-  "continue_without_signin": "बिना साइन इन बढ़ें",
-  "continue_in": "में जारी रखें"
+  "select_language": "Choose your language",
+  "signin_title": "Sign in to your account",
+  "wishlist": "View your wishlist",
+  "previous_orders": "Find your previous orders and reorder",
+  "track_order": "Track your purchases",
+  "signin_button": "Already a customer? Sign in",
+  "create_account": "New to our platform? Create an account",
+  "continue_without_signin": "Continue without signing in",
+  "continue_in": "Continue in"
 }

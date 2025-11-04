@@ -1,1 +1,11 @@
-{}
+{
+  "select_language": "Choose your language",
+  "signin_title": "Sign in to your account",
+  "wishlist": "View your wishlist",
+  "previous_orders": "Find your previous orders and reorder",
+  "track_order": "Track your purchases",
+  "signin_button": "Already a customer? Sign in",
+  "create_account": "New to our platform? Create an account",
+  "continue_without_signin": "Continue without signing in",
+  "continue_in": "Continue in"
+}
